@@ -1,0 +1,72 @@
+pipeline {
+    agent {
+        docker {
+            image 'docker:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    environment {
+        DOCKER_HUB_USERNAME = 'siva671'
+        DOCKER_HUB_TOKEN = credentials('docker-hub-token')
+        DOCKER_IMAGE_NAME = 'my-express-app'
+        DOCKER_TAG = 'latest'
+        APP_PORT = '4000' // External port
+        CONTAINER_PORT = '3000' // Internal container port
+    }
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Tag for the Docker image')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out the source code...'
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building the Docker image...'
+                sh "docker build -t ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${params.IMAGE_TAG} ."
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                echo 'Logging into Docker Hub...'
+                sh "echo ${DOCKER_HUB_TOKEN} | docker login -u ${DOCKER_HUB_USERNAME} --password-stdin"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Pushing the Docker image to Docker Hub...'
+                sh "docker push ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${params.IMAGE_TAG}"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the application using Docker...'
+                sh "docker run -d -p ${APP_PORT}:${CONTAINER_PORT} --name ${DOCKER_IMAGE_NAME} ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${params.IMAGE_TAG}"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs.'
+        }
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()  // Clean up workspace after deployment
+        }
+    }
+}
+
