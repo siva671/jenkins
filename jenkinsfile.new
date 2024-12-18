@@ -14,7 +14,8 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
+
+        stage('Checkout') {
             steps {
                 checkout scm
             }
@@ -38,16 +39,16 @@ pipeline {
             }
         }
 
-        stage('Deploy to Local Container') {
+        stage('Deploy') {
             steps {
-                sh "docker run -d -p 3000:3000 ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                sh "docker run -d -p 4000:3000 ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
             }
         }
     }
 
     post {
         always {
-            cleanWs()  // Clean workspace
+            cleanWs()  // Clean up the workspace after deployment
         }
     }
 }
