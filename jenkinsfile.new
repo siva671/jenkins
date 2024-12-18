@@ -1,0 +1,54 @@
+pipeline {
+    agent {
+        docker {
+            image 'docker:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    environment {
+        DOCKER_HUB_USERNAME = 'siva671'
+        DOCKER_HUB_TOKEN = credentials('docker-hub-token')
+        DOCKER_IMAGE_NAME = 'my-express-app'
+        DOCKER_TAG = 'latest'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ."
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                sh "echo ${DOCKER_HUB_TOKEN} | docker login -u ${DOCKER_HUB_USERNAME} --password-stdin"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+            }
+        }
+
+        stage('Deploy to Local Container') {
+            steps {
+                sh "docker run -d -p 3000:3000 ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()  // Clean workspace
+        }
+    }
+}
+
