@@ -1,28 +1,44 @@
 pipeline {
     agent any
+    
     environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials'  // Jenkins credential ID
-        DOCKER_IMAGE_NAME = 'siva671/myapp'
-        DOCKER_IMAGE_TAG = "build-${env.BUILD_NUMBER}"   // Dynamic build tag
+        DOCKERHUB_CREDENTIALS = 'dockerhub-credential'  // Updated Jenkins credential ID for Docker Hub credentials
+        DOCKER_IMAGE_NAME = 'siva671/myapp'              // Docker image name
+        DOCKER_IMAGE_TAG = "build-${env.BUILD_NUMBER}"   // Tag the image with the Jenkins build number
     }
+
     stages {
         stage('Clone Repository') {
             steps {
+                // Clone the Git repository containing the Dockerfile and application code
                 git 'https://github.com/siva671/jenkins.git'
             }
         }
+        
         stage('Build Docker Image') {
             steps {
+                // Build the Docker image using the Dockerfile in the repository
                 sh "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
             }
         }
+        
         stage('Push to Docker Hub') {
             steps {
+                // Log in to Docker Hub using credentials stored in Jenkins
                 withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    // Login to Docker Hub using the credentials
                     sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                    // Push the Docker image to Docker Hub
                     sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            // Clean up any resources or remove the Docker image after the job is done
+            sh "docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
         }
     }
 }
