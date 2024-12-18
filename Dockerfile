@@ -1,26 +1,20 @@
-# Use a Node.js LTS image
-FROM node:14
+# Use the official Node.js image as a base image
+FROM node:16
 
-# Set the working directory
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json (if available) to install dependencies
+# Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
-RUN npm install --production
 
-# Copy the rest of the application code
+# Install application dependencies
+RUN npm install
+
+# Copy the rest of the application code into the container
 COPY . .
 
-# Create a non-root user and switch to it
-RUN useradd -m appuser
-USER appuser
+# Expose the port that the app will run on
+EXPOSE 8080
 
-# Expose the application port
-EXPOSE 3000
-
-# Set the environment variable
-ENV NODE_ENV=production
-
-# Start the application
+# Define the command to run the application
 CMD ["npm", "start"]
-
