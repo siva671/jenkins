@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials'  // Jenkins credential ID
+        DOCKER_IMAGE_NAME = 'siva671/myapp'
+        DOCKER_IMAGE_TAG = "build-${env.BUILD_NUMBER}"   // Dynamic build tag
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/siva671/jenkins.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                    sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+                }
+            }
+        }
+    }
+}
