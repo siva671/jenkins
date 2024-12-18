@@ -54,6 +54,14 @@ pipeline {
                 sh "docker run -d -p ${APP_PORT}:${CONTAINER_PORT} --name ${DOCKER_IMAGE_NAME} ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${params.IMAGE_TAG}"
             }
         }
+
+        stage('Archive Artifacts') {
+            steps {
+                echo 'Archiving artifacts...'
+                // Insert the generated script here
+                archiveArtifacts artifacts: '/*', followSymlinks: false
+            }
+        }
     }
 
     post {
@@ -69,4 +77,3 @@ pipeline {
         }
     }
 }
-
