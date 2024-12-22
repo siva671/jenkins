@@ -14,6 +14,8 @@ spec:
     spec:
       containers:
       - name: apache
-        image: apache-app:latest
+        image: httpd:latest
         ports:
         - containerPort: 80
+                                                                                                                        
+                                                                                                               
